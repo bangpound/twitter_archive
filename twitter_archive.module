@@ -1,0 +1,39 @@
+<?php
+
+function twitter_archive_twitter_status_save($status) {
+  module_load_include('inc', 'twitter');
+
+  $query = db_select('twitter_account')
+    ->fields('twitter_account', array('twitter_uid'))
+    ->condition('screen_name', $status['screen_name'])
+    ->execute();
+  $twitter_uid = $query->fetchField();
+  $account = twitter_account_load($twitter_uid);
+
+  $twitter = twitter_connect($account);
+
+  $params = array(
+    'id' => $status['twitter_id'],
+    'include_entities' => 'true',
+  );
+  $status['status'] = $twitter->call('statuses/show', $params, 'GET', TRUE);
+
+  $params = array(
+    'id' => $status['twitter_id'],
+    'omit_script' => 'true',
+    'hide_media' => 'false',
+    'hide_thread' => 'false',
+  );
+  $status['oembed'] = $twitter->call('statuses/oembed', $params, 'GET', TRUE);
+
+  $query = db_select('twitter_archive', 'ta')
+    ->fields('ta', array('twitter_id'))
+    ->condition('twitter_id', $status['twitter_id']);
+
+  if ($query->execute()->fetchField()) {
+    drupal_write_record('twitter_archive', $status, 'twitter_id');
+  }
+  else {
+    drupal_write_record('twitter_archive', $status);
+  }
+}

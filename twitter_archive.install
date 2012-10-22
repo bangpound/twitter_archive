@@ -1,0 +1,34 @@
+<?php
+
+function twitter_archive_schema() {
+  $schema['twitter_archive'] = array(
+    'description' => 'Stores JSON and oEmbed from Twitter.',
+    'fields' => array(
+      'twitter_id' => array(
+        'description' => 'Unique identifier for each twitter post.',
+        'type' => 'numeric',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'precision' => '20',
+        'scale' => '0',
+      ),
+      'status' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+      ),
+      'oembed' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('twitter_id'),
+  );
+  return $schema;
+}
