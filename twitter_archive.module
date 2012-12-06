@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Implements hook_twitter_status_save().
+ */
 function twitter_archive_twitter_status_save($status) {
   module_load_include('inc', 'twitter');
 
