@@ -79,7 +79,11 @@ function twitter_archive($record) {
       $extra_statuses[] = twitter_archive_statuses_show($data['retweeted_status']['id'], $data['retweeted_status']['user']['id']);
     }
     foreach (array_filter($extra_statuses) as $extra_status) {
-      twitter_status_save(new TwitterStatus($extra_status));
+      $new_status = new TwitterStatus($extra_status);
+      if (!twitter_account_load($new_status->user->id)) {
+        twitter_account_save($new_status->user);
+      }
+      twitter_status_save($new_status);
     }
   }
 }
