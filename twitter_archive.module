@@ -33,7 +33,6 @@ function twitter_archive_twitter_status_save($status) {
 
   $update = db_select('twitter_archive', 'ta')
     ->condition('id', $record['id'])
-    ->condition('twitter_uid', $record['twitter_uid'])
     ->countQuery()
     ->execute()
     ->fetchField();
@@ -60,7 +59,6 @@ function twitter_archive_cron_queue_info() {
 function twitter_archive($record) {
   $update = db_select('twitter_archive', 'ta')
     ->condition('id', $record['id'])
-    ->condition('twitter_uid', $record['twitter_uid'])
     ->countQuery()
     ->execute()
     ->fetchField();
