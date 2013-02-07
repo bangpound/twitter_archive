@@ -84,6 +84,7 @@ function twitter_archive($record) {
       $record['data'] = $data;
       $record['archived'] = time();
       drupal_write_record('twitter_archive', $record);
+      module_invoke_all('twitter_archive', $data);
 
       // If the Twitter status hasn't already been saved, capture it. Because the
       // archive record was already saved, it will not generate a new queue task.
