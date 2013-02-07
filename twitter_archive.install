@@ -20,13 +20,6 @@ function twitter_archive_schema() {
         'not null' => FALSE,
         'serialize' => TRUE,
       ),
-      'oembed' => array(
-        'description' => 'TODO: please describe this field!',
-        'type' => 'blob',
-        'size' => 'big',
-        'not null' => FALSE,
-        'serialize' => TRUE,
-      ),
     ),
     'primary key' => array('twitter_id'),
   );

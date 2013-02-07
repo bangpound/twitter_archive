@@ -21,14 +21,6 @@ function twitter_archive_twitter_status_save($status) {
   );
   $status['status'] = $twitter->call('statuses/show', $params, 'GET', TRUE);
 
-  $params = array(
-    'id' => $status['twitter_id'],
-    'omit_script' => 'true',
-    'hide_media' => 'false',
-    'hide_thread' => 'false',
-  );
-  $status['oembed'] = $twitter->call('statuses/oembed', $params, 'GET', TRUE);
-
   $query = db_select('twitter_archive', 'ta')
     ->fields('ta', array('twitter_id'))
     ->condition('twitter_id', $status['twitter_id']);
