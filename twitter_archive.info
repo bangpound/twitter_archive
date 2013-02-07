@@ -2,3 +2,4 @@ name = Twitter Archive
 description = Archives status responses from API.
 core = 7.x
 dependencies[] = twitter (5.x)
+files[] = TwitterArchive.inc

@@ -65,24 +65,57 @@ function twitter_archive($record) {
 
   if (!$update) {
     module_load_include('inc', 'twitter_archive');
-    $data = $record['data'] = twitter_archive_statuses_show($record['id'], $record['twitter_uid']);
+
+    // Some failed requests and related statuses are added to the queue, too.
+    $queue = DrupalQueue::get('twitter_archive');
+
+    try {
+      $data = twitter_archive_statuses_show($record['id'], $record['twitter_uid']);
+    }
+    catch (TwitterException $e) {
+      $error = $e->getMessage();
+      if ($error == 'Too Many Requests') {
+        $queue->createItem($record);
+      }
+    }
+
     if ($data) {
+
+      $record['data'] = $data;
       $record['archived'] = time();
       drupal_write_record('twitter_archive', $record);
 
-      $extra_statuses = array();
+      // If the Twitter status hasn't already been saved, capture it. Because the
+      // archive record was already saved, it will not generate a new queue task.
+      if (!twitter_status_load($record['id'])) {
+        $status = new TwitterStatus($data);
+        if (!twitter_account_load($status->user->id)) {
+          twitter_account_save($status->user);
+        }
+        twitter_status_save($status);
+      }
+
+      // Archive related statuses. Capture the tweet this replies to and the
+      // original tweet for retweets.
       if ($data['in_reply_to_status_id']) {
-        $extra_statuses[] = twitter_archive_statuses_show($data['in_reply_to_status_id'], $data['in_reply_to_user_id']);
+
+        // Queue a task to capture the status this one replies to using authenticated
+        // account where possible.
+        $new_record = array('id' => $data['in_reply_to_status_id'], 'twitter_uid' => 0);
+        if ($record['twitter_uid']) {
+          $new_record['twitter_uid'] = $record['twitter_uid'];
+        }
+        else if (twitter_archive_account_is_auth($data['in_reply_to_user_id'])) {
+          $new_record['twitter_uid'] = $data['in_reply_to_user_id'];
+        }
+        $queue->createItem($new_record);
       }
       if (isset($data['retweeted_status'])) {
-        $extra_statuses[] = twitter_archive_statuses_show($data['retweeted_status']['id'], $data['retweeted_status']['user']['id']);
-      }
-      foreach (array_filter($extra_statuses) as $extra_status) {
-        $new_status = new TwitterStatus($extra_status);
-        if (!twitter_account_load($new_status->user->id)) {
-          twitter_account_save($new_status->user);
-        }
-        twitter_status_save($new_status);
+
+        // Retweets are always unprotected and can always be retrieved without
+        // authentication.
+        $new_record = array('id' => $data['retweeted_status']['id'], 'twitter_uid' => 0);
+        $queue->createItem($new_record);
       }
     }
   }
