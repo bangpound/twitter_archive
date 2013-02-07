@@ -1,19 +1,11 @@
 <?php
 
 /**
- * Determine if the Twitter user ID is authenticated.
- */
-function twitter_archive_account_is_auth($twitter_uid) {
-  if ($account = twitter_account_load($twitter_uid)) {
-    return $account->is_auth();
-  }
-}
-
-/**
  * Implements hook_twitter_status_save().
  */
 function twitter_archive_twitter_status_save($status) {
   module_load_include('inc', 'twitter');
+  module_load_include('inc', 'twitter_archive');
   $is_auth = FALSE;
 
   // Prefer to load tweets with their authors' credentials.
@@ -53,6 +45,16 @@ function twitter_archive_twitter_status_save($status) {
 }
 
 /**
+ * Implements hook_cron_queue_info().
+ */
+function twitter_archive_cron_queue_info() {
+  $queues['twitter_archive'] = array(
+    'worker callback' => 'twitter_archive',
+  );
+  return $queues;
+}
+
+/**
  * Cron queue worker callback.
  */
 function twitter_archive($record) {
@@ -64,6 +66,7 @@ function twitter_archive($record) {
     ->fetchField();
 
   if (!$update) {
+    module_load_include('inc', 'twitter_archive');
     $data = $record['data'] = twitter_archive_statuses_show($record['id'], $record['twitter_uid']);
     $record['archived'] = time();
     drupal_write_record('twitter_archive', $record);
@@ -79,31 +82,4 @@ function twitter_archive($record) {
       twitter_status_save(new TwitterStatus($extra_status));
     }
   }
-}
-
-/**
- * Function to retrieve Twitter status using authorization if possible.
- */
-function twitter_archive_statuses_show($id, $twitter_uid) {
-  if ($twitter_uid && $account = twitter_account_load($twitter_uid)) {
-    $twitter = twitter_connect($account->is_auth() ? $account : NULL);
-  }
-  else {
-    $twitter = twitter_connect();
-  }
-  $params = array(
-    'id' => $id,
-    'include_entities' => 'true',
-  );
-  return $twitter->call('statuses/show', $params, 'GET');
-}
-
-/**
- * Implements hook_cron_queue_info().
- */
-function twitter_archive_cron_queue_info() {
-  $queues['twitter_archive'] = array(
-    'worker callback' => 'twitter_archive',
-  );
-  return $queues;
 }
