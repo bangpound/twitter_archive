@@ -4,40 +4,40 @@
  * Implements hook_twitter_status_save().
  */
 function twitter_archive_twitter_status_save($status) {
-  module_load_include('inc', 'twitter');
-  module_load_include('inc', 'twitter_archive');
-  $is_auth = FALSE;
-
-  // Prefer to load tweets with their authors' credentials.
-  $twitter_uid = db_select('twitter_account')
-    ->fields('twitter_account', array('twitter_uid'))
-    ->condition('screen_name', $status->user->screen_name)
-    ->execute()
-    ->fetchField();
-  $is_auth = twitter_archive_account_is_auth($twitter_uid);
-
-  // Tweets being saved may be mentions, in which case we have credentials for
-  // in_reply_to_user_id.
-  if (!$is_auth) {
-    $twitter_uid = $status->in_reply_to_user_id;
-    $is_auth = twitter_archive_account_is_auth($twitter_uid);
-  }
-
-  // Archive requests a status ID with specific credentials if available. This array
-  // becomes the record that is saved in the archive table. If there is no authenticated
-  // for making the request, the request will be anonymous and unauthenticated.
-  $record = array(
-    'id' => $status->id,
-    'twitter_uid' => $is_auth ? (int) $twitter_uid : 0,
-  );
-
-  $update = db_select('twitter_archive', 'ta')
-    ->condition('id', $record['id'])
+  $update = db_select('twitter_archive')
+    ->condition('id', $status->id)
     ->countQuery()
     ->execute()
     ->fetchField();
 
   if (!$update) {
+    module_load_include('inc', 'twitter');
+    module_load_include('inc', 'twitter_archive');
+    $is_auth = FALSE;
+
+    // Prefer to load tweets with their authors' credentials.
+    $twitter_uid = db_select('twitter_account')
+      ->fields('twitter_account', array('twitter_uid'))
+      ->condition('screen_name', $status->user->screen_name)
+      ->execute()
+      ->fetchField();
+    $is_auth = twitter_archive_account_is_auth($twitter_uid);
+
+    // Tweets being saved may be mentions, in which case we have credentials for
+    // in_reply_to_user_id.
+    if (!$is_auth) {
+      $twitter_uid = $status->in_reply_to_user_id;
+      $is_auth = twitter_archive_account_is_auth($twitter_uid);
+    }
+
+    // Archive requests a status ID with specific credentials if available. This array
+    // becomes the record that is saved in the archive table. If there is no authenticated
+    // for making the request, the request will be anonymous and unauthenticated.
+    $record = array(
+      'id' => $status->id,
+      'twitter_uid' => $is_auth ? (int) $twitter_uid : 0,
+    );
+
     $queue = DrupalQueue::get('twitter_archive');
     $queue->createItem($record);
   }
@@ -57,7 +57,7 @@ function twitter_archive_cron_queue_info() {
  * Cron queue worker callback.
  */
 function twitter_archive($record) {
-  $update = db_select('twitter_archive', 'ta')
+  $update = db_select('twitter_archive')
     ->condition('id', $record['id'])
     ->countQuery()
     ->execute()
