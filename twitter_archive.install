@@ -4,7 +4,7 @@ function twitter_archive_schema() {
   $schema['twitter_archive'] = array(
     'description' => 'Stores JSON and oEmbed from Twitter.',
     'fields' => array(
-      'twitter_id' => array(
+      'id' => array(
         'description' => 'Unique identifier for each twitter post.',
         'type' => 'numeric',
         'unsigned' => TRUE,
@@ -13,7 +13,7 @@ function twitter_archive_schema() {
         'precision' => '20',
         'scale' => '0',
       ),
-      'status' => array(
+      'data' => array(
         'description' => 'TODO: please describe this field!',
         'type' => 'blob',
         'size' => 'big',
@@ -21,7 +21,7 @@ function twitter_archive_schema() {
         'serialize' => TRUE,
       ),
     ),
-    'primary key' => array('twitter_id'),
+    'primary key' => array('id'),
   );
   return $schema;
 }
