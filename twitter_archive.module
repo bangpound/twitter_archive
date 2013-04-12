@@ -77,6 +77,7 @@ function twitter_archive($record) {
       if ($error == 'Too Many Requests') {
         $queue->createItem($record);
       }
+      return;
     }
 
     if ($data) {
@@ -90,9 +91,6 @@ function twitter_archive($record) {
       // archive record was already saved, it will not generate a new queue task.
       if (!twitter_status_load($record['id'])) {
         $status = new TwitterStatus($data);
-        if (!twitter_account_load($status->user->id)) {
-          twitter_account_save($status->user);
-        }
         twitter_status_save($status);
       }
 
